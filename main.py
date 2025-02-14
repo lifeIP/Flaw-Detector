@@ -112,7 +112,11 @@ class ManagePThread(QThread):
 
     def yolo_data_processing(self, cam_index, confidence_threshold, start_or_stop, counts_of_flaws, mlock):
         model = YOLO(MODEL_PATH)
-        model.to('cuda')        
+        try:
+            model.to('cuda')        
+        except:
+            pass
+
         while(True):
 
             detections = model(cam_index, stream=True)
@@ -121,19 +125,21 @@ class ManagePThread(QThread):
             for obj in detections:
                 opencv_array = cv2.cvtColor(obj.orig_img, cv2.COLOR_RGB2BGR)
                 
-                # directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
+                #++++++++++++++++++++++++++++++++++++++++++++++++
+                # Этот участок кода должен быть удален для релиза
+                directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
                 
-                # if not os.path.exists(directory_empty):
-                #     os.makedirs(directory_empty)
+                if not os.path.exists(directory_empty):
+                    os.makedirs(directory_empty)
                 
-                # cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
-
+                cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
+                # Этот участок кода должен быть удален для релиза
+                #------------------------------------------------
 
                 directory_with_boxes = f"images/boxes/{datetime.today().strftime('%Y/%m/%d')}"
                 file_name = time.time_ns()
                 
                 for data in obj.boxes.data.tolist():
-                    # extract the confidence (i.e., probability) associated with the detection
                     confidence = data[4]
 
                     if float(confidence) < float(confidence_threshold)/10000:
@@ -207,11 +213,14 @@ class SenderThread(QThread):
             logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
             return
         
-        self.serial_port = serial.Serial(self.port)
-        self.serial_port.baudrate=9600
+
+        try:
+            self.serial_port = serial.Serial(self.port)
+            self.serial_port.baudrate=9600
+        except:
+            pass
 
         self.line_is_start = "red"
-        
         self.start()
 
 
@@ -247,9 +256,11 @@ class SenderThread(QThread):
                 if not is_found:
                     logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
                 else:
-                    self.serial_port = serial.Serial(self.port)
-                    self.serial_port.baudrate=9600
-
+                    try:
+                        self.serial_port = serial.Serial(self.port)
+                        self.serial_port.baudrate=9600
+                    except:
+                        pass
         
 
 
