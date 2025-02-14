@@ -54,7 +54,7 @@ class ManagePThread(QThread):
             logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
             self.signal_critical_error.emit(0)
 
-            #TODO: надо сделать автоматический выбор камер и если нет достаточного количества, то должно быть сообщено об ошибке пользователю    
+            #TODO: надо сделать автоматический выбор камер и если нет достаточного количества, то должно быть сообщено об ошибке пользователю 
             self.cam_index_0 = ids[0]
 
         else:
@@ -161,21 +161,21 @@ class ManagePThread(QThread):
     def run(self):
        
         thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
-        thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        # thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        # thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
+        # thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
         thread_4.start()
-        thread_5.start()
-        thread_6.start()
-        thread_7.start()
+        # thread_5.start()
+        # thread_6.start()
+        # thread_7.start()
 
 
         thread_4.join()
-        thread_5.join()
-        thread_6.join()
-        thread_7.join()
+        # thread_5.join()
+        # thread_6.join()
+        # thread_7.join()
 
     
 
@@ -438,14 +438,20 @@ class App(QWidget):
 
 
 if __name__ == "__main__":
-    import shutil
-    shutil.move("flaw.log", f"logs/{int(time.time())}.log")
+
+    try:
+        import shutil
+        shutil.move("flaw.log", f"logs/{int(time.time())}.log")
+        open('flaw.log', 'w').close()
+    except:
+        open('flaw.log', 'w').close()
+        
 
     # Начиаем логирование
     FORMAT = '%(asctime)s %(message)s'
     logging.basicConfig(format=FORMAT, filename="flaw.log")
-
     logger.warning(f"Приложение запущено")
+    
     # Запуск графического приложения
     app = QApplication(sys.argv)
     ex = App()
