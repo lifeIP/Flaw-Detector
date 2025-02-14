@@ -108,7 +108,7 @@ class ManagePThread(QThread):
             
                         
             for obj in detections:
-                opencv_array = cv2.cvtColor(obj.orig_img, cv2.COLOR_RGB2BGR)
+                opencv_array = obj.orig_img
                 
                 #++++++++++++++++++++++++++++++++++++++++++++++++
                 # Этот участок кода должен быть удален для релиза
