@@ -2,8 +2,15 @@ import os
 import sys
 import cv2
 import serial.serialutil
+import torchvision.transforms.functional
 from ultralytics import YOLO
-import  multiprocessing as mp
+
+
+import torch
+import torch.multiprocessing as mp
+import torchvision
+
+
 import time
 from PIL import Image
 from datetime import datetime
@@ -17,17 +24,11 @@ import serial
 
 IS_DEBUG = True
 ID = 0
-MODEL_PATH = "yolo11n.pt"
+MODEL_PATH = "yolo11s.pt"
 
 
 logger = logging.getLogger(__name__)
-model = YOLO(MODEL_PATH)
 
-
-try:
-    model.to('cuda')
-except:
-    pass
 
 
 class ManagePThread(QThread):
@@ -61,27 +62,22 @@ class ManagePThread(QThread):
             self.cam_index_1 = ids[1]
             self.cam_index_2 = ids[2]
             self.cam_index_3 = ids[3]
-            
-        
-        self.frame_rate = 5
-        self.confidence_threshold = 4500 # 0 - 9999
-        
 
+
+        self.confidence_threshold = 8000 # 0 - 9999
+        
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
-
-        self.array_cam_0 = self.manager.list()
-        self.array_cam_1 = self.manager.list()
-        self.array_cam_2 = self.manager.list()
-        self.array_cam_3 = self.manager.list()
+        
         self.start_or_stop = self.manager.list([False, False])
 
         self.counts_of_flaws_0 = self.manager.list([0])
         self.counts_of_flaws_1 = self.manager.list([0])
         self.counts_of_flaws_2 = self.manager.list([0])
         self.counts_of_flaws_3 = self.manager.list([0])
-        
+
         self.start()
+
 
     pyqtSlot(bool)
     def slot_start_stop(self, start: bool):
@@ -103,80 +99,34 @@ class ManagePThread(QThread):
     def slot_get_error_count(self):
         self.mlock.acquire()
         count = self.counts_of_flaws_0[0] + self.counts_of_flaws_1[0] + self.counts_of_flaws_2[0] + self.counts_of_flaws_3[0]
+        
         self.counts_of_flaws_0[0] = 0
         self.counts_of_flaws_1[0] = 0
         self.counts_of_flaws_2[0] = 0
         self.counts_of_flaws_3[0] = 0
+
         self.mlock.release()
         self.signal_get_error_count.emit(count)
 
 
-    def get_image_from_cam(self, cam_index, array_cam, frame_rate, start_or_stop):
-        cap = cv2.VideoCapture(cam_index)
-        calculated_time_on_frame:float = 1.0 / frame_rate
-        
-        from src.work_with_files import load_settings_from_file
-        crop_left, crop_right, crop_up, crop_down, confidence_threshold = load_settings_from_file(0)
-                
-        if not cap.isOpened():
-            self.signal_critical_error.emit(1)
-            logger.warning(f"Критическая ошибка: Не удалось получить доступ к камере с id:{cam_index}")
-            return
 
-        while True:
-            start_time = time.time()
-            ret, frame = cap.read()
-
-            if start_or_stop[1]:
-                break
-
-            if not ret:
-                break
-
-            cropped_frame = frame[crop_up:crop_down, crop_left:crop_right]
-            # TODO: Надо реализовать настройки для всех параметров, которые нужны для работы
-
-            if not start_or_stop[0]:
-                continue
-
-            
-            array_cam.append(cropped_frame)
-            
-            time_on_frame = time.time() - start_time
-            
-            if calculated_time_on_frame - time_on_frame > 0:
-                time.sleep(calculated_time_on_frame - time_on_frame)
-            
-            #TODO: Надо реализовать функцию, которая отвечает за переполнение буфера. Например принудительное удаление некоторых кадров. 
-
-
-
-    # Функция 
-    def yolo_data_processing(self, array_cam, confidence_threshold, start_or_stop, counts_of_flaws):
-        
+    def yolo_data_processing(self, cam_index, confidence_threshold, start_or_stop, counts_of_flaws, mlock):
+        model = YOLO(MODEL_PATH)
+        model.to('cuda')        
         while(True):
-            if start_or_stop[1]:
-                break
 
-            arr = list()
-
-            for img in array_cam:
-                arr.append(Image.fromarray(img))
+            detections = model(cam_index, stream=True)
             
-            if len(arr) == 0: continue
-            
-            array_cam[:]=[]
-            detections = model(arr)
-
+                        
             for obj in detections:
                 opencv_array = cv2.cvtColor(obj.orig_img, cv2.COLOR_RGB2BGR)
                 
-                directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
+                # directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
                 
-                if not os.path.exists(directory_empty):
-                    os.makedirs(directory_empty)
+                # if not os.path.exists(directory_empty):
+                #     os.makedirs(directory_empty)
                 
-                cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
+                # cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
 
 
                 directory_with_boxes = f"images/boxes/{datetime.today().strftime('%Y/%m/%d')}"
@@ -189,9 +139,15 @@ class ManagePThread(QThread):
                     if float(confidence) < float(confidence_threshold)/10000:
                         continue
 
+                    if not start_or_stop[0]:
+                        continue
+        
+                    mlock.acquire()
                     counts_of_flaws[0] += 1
                     logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold)/10000} *** {directory_with_boxes}/{file_name}.png")
-
+                    start_or_stop[0] = False
+                    mlock.release()
+              
                     if not os.path.exists(directory_with_boxes):
                         os.makedirs(directory_with_boxes)
 
@@ -199,41 +155,27 @@ class ManagePThread(QThread):
                     cv2.rectangle(opencv_array, (xmin, ymin) , (xmax, ymax), (0, 255, 0), 2)
                     
                     cv2.imwrite(f"{directory_with_boxes}/{file_name}.png", opencv_array)
-
+            
 
 
     def run(self):
-        thread_0 = mp.Process(target=self.get_image_from_cam, args=(self.cam_index_0, self.array_cam_0, self.frame_rate, self.start_or_stop))
-        # thread_1 = mp.Process(target=self.get_image_from_cam, args=(self.cam_index_1, self.array_cam_1, self.frame_rate, self.start_or_stop))
-        # thread_2 = mp.Process(target=self.get_image_from_cam, args=(self.cam_index_2, self.array_cam_2, self.frame_rate, self.start_or_stop))
-        # thread_3 = mp.Process(target=self.get_image_from_cam, args=(self.cam_index_3, self.array_cam_3, self.frame_rate, self.start_or_stop))
-        
-        thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.array_cam_0, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_0))
-        # thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.array_cam_1, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_1))
-        # thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.array_cam_2, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_2))
-        # thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.array_cam_3, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_3))
+       
+        thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
+        thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
+        thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
-        thread_0.start()
-        # thread_1.start()
-        # thread_2.start()
-        # thread_3.start()
-        
         thread_4.start()
-        # thread_5.start()
-        # thread_6.start()
-        # thread_7.start()
+        thread_5.start()
+        thread_6.start()
+        thread_7.start()
 
-
-        thread_0.join()
-        # thread_1.join()
-        # thread_2.join()
-        # thread_3.join()
 
         thread_4.join()
-        # thread_5.join()
-        # thread_6.join()
-        # thread_7.join()
+        thread_5.join()
+        thread_6.join()
+        thread_7.join()
 
     
 
