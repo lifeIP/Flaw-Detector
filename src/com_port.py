@@ -3,6 +3,7 @@ from PyQt6.QtCore       import *
 from PyQt6.QtGui        import *
 
 import serial
+import time
 
 from src.logger import logger
 
@@ -86,3 +87,7 @@ class SenderThread(QThread):
                     except:
                         logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
                         self.signal_critical_error.emit(9855)
+                
+                time.sleep(15)
+
+                

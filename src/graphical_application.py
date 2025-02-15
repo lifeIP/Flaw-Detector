@@ -4,6 +4,60 @@ from PyQt6.QtGui        import *
 
 from src.logger import logger    
 
+import json
+import qrcode
+
+class AboutProgram(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        with open('aboutme.json', 'r') as file:
+            self.data = json.load(file)
+        
+        self.qr_tg = QPixmap()
+        img = qrcode.make(self.data.get("support"))
+        img.save("tg_qr.png")
+        
+        self.qr_tg.load("tg_qr.png")
+        
+
+        self.initUI()
+        self.qr_label.setPixmap(self.qr_tg)
+
+    def initUI(self):
+        
+        self.name_label = QLabel(f'<b style="color: green;">{self.data.get("name")}</b>')
+        self.name_label.setFont(QFont(None, 25))
+        self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.version_label_s = QLabel(f'Версия ПО: <b style="color: green;">{self.data.get("version").get("software")}</b>')
+        self.version_label_s.setFont(QFont(None, 20))
+        self.version_label_s.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.version_label_h = QLabel(f'Версия АО: <b style="color: green;">{self.data.get("version").get("hardware")}</b>')
+        self.version_label_h.setFont(QFont(None, 20))
+        self.version_label_h.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.qr_label = QLabel()
+        self.qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.support_label = QLabel("Связаться с поддержкой")
+        self.support_label.setWordWrap(True)
+        self.support_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.support_label.setFont(QFont(None, 25))
+        
+        placeholder = QWidget()
+        placeholder.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+
+
+        v_box_layout_main = QVBoxLayout(self)
+        v_box_layout_main.addWidget(self.name_label)
+        v_box_layout_main.addWidget(self.version_label_s)
+        v_box_layout_main.addWidget(self.version_label_h)
+        v_box_layout_main.addWidget(self.qr_label)
+        v_box_layout_main.addWidget(self.support_label)
+        v_box_layout_main.addWidget(placeholder)
+
 
 class App(QWidget):
 
@@ -166,11 +220,7 @@ class App(QWidget):
             self.slot_change_status(2)
         else:
             pass
-            
-
-
-            
-        # TODO: При возникновении критических ошибок линия должна останавливаться, а также на экране должна отобразиться надпись ОШИБКА
+        
 
 
     # Меняет пороговое значение для нейросети
@@ -181,17 +231,28 @@ class App(QWidget):
         if value == "": self.confidence_threshold_0 = int(self.lineEdit_confidence_threshold_0.placeholderText())
         else: self.confidence_threshold_0 = int(value)
 
+        logger.warning(f"change_confidence_threshold_0: {value}, placeholder: {self.lineEdit_confidence_threshold_0.placeholderText()}")
+
+
     def change_confidence_threshold_1(self, value):
         if value == "": self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         else: self.confidence_threshold_1 = int(value)
+
+        logger.warning(f"change_confidence_threshold_1: {value}, placeholder: {self.lineEdit_confidence_threshold_1.placeholderText()}")
     
+
     def change_confidence_threshold_2(self, value):
         if value == "": self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         else: self.confidence_threshold_2 = int(value)
+        
+        logger.warning(f"change_confidence_threshold_2: {value}, placeholder: {self.lineEdit_confidence_threshold_2.placeholderText()}")
     
+
     def change_confidence_threshold_3(self, value):
         if value == "": self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
         else: self.confidence_threshold_3 = int(value)
+
+        logger.warning(f"change_confidence_threshold_3: {value}, placeholder: {self.lineEdit_confidence_threshold_3.placeholderText()}")
     
 
     def login(self, password):
@@ -224,6 +285,8 @@ class App(QWidget):
             for line in lines: 
                 file.write(str(line) + '\n')
 
+        logger.warning(f"btnSavePressed: {self.confidence_threshold_0}, {self.confidence_threshold_1}, {self.confidence_threshold_2}, {self.confidence_threshold_3}")
+
         self.lineEdit_confidence_threshold_0.setPlaceholderText(f"{self.confidence_threshold_0}")
         self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.confidence_threshold_1}")
         self.lineEdit_confidence_threshold_2.setPlaceholderText(f"{self.confidence_threshold_2}")
@@ -237,7 +300,6 @@ class App(QWidget):
         self.signal_change_confidence_threshold.emit(self.confidence_threshold_2, 2)
         self.signal_change_confidence_threshold.emit(self.confidence_threshold_3, 3)
         
-        # TODO: Надо сделать отправку
         
 
     def btnCancelPressed(self):
@@ -250,6 +312,8 @@ class App(QWidget):
         self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
+        
+        logger.warning(f"btnCancelPressed: {self.confidence_threshold_0}, {self.confidence_threshold_1}, {self.confidence_threshold_2}, {self.confidence_threshold_3}")
 
         self.lineEdit_password.clear()
         self.login("")
@@ -261,6 +325,7 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         label_count_of_defects_name = QLabel("КОЛИЧЕСТВО ДЕФЕКТОВ")
+        label_count_of_defects_name.setWordWrap(True)
         label_count_of_defects_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label_count_of_defects_name.setFont(QFont(None, 28))
 
@@ -436,7 +501,7 @@ class App(QWidget):
         tabs = QTabWidget()
         tabs.addTab(layout_vertical_box_main_widget, "Главная")
         tabs.addTab(settings_widget, "Настройки")
-        tabs.addTab(QWidget(), "О программе")
+        tabs.addTab(AboutProgram(), "О программе")
 
 
         main_layout = QVBoxLayout(self)
@@ -447,7 +512,6 @@ class App(QWidget):
         self.manage.signal_get_error_count.connect(self.slot_get_error_count)
 
 
-        self.signal_change_confidence_threshold.connect(self.manage.slot_change_confidence_threshold)
         self.manage.signal_critical_error.connect(self.slot_send_critical_error)
         self.signal_start_or_stop.connect(self.manage.slot_start_stop)
         self.signal_close_thread.connect(self.manage.slot_exit_thread)

@@ -39,7 +39,6 @@ class ManagePThread(QThread):
             logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
             self.signal_critical_error.emit(9750)
 
-            #TODO: надо сделать автоматический выбор камер и если нет достаточного количества, то должно быть сообщено об ошибке пользователю 
             # self.cam_index_0 = ids[0]
             exit(1)
 
