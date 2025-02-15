@@ -128,20 +128,20 @@ class App(QWidget):
 
     pyqtSlot(int)
     def slot_send_critical_error(self, er_id):
-        
-        if er_id >= 9850 and er_id < 9860:
-            logger.warning(f"Был вызван обработчик критических ошибок: {er_id}")
+        # TODO: Надо раскоментировать
+        # if er_id >= 9850 and er_id < 9860:
+        #     logger.warning(f"Был вызван обработчик критических ошибок: {er_id}")
             
-            self.is_line_start = False
-            self.signal_start_or_stop.emit(self.is_line_start)
-            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
-            self.slot_change_status(2)
-        elif er_id >= 9750 and er_id < 9760:
-            self.is_line_start = False
-            self.signal_start_or_stop.emit(self.is_line_start)
-            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
-            self.slot_change_status(2)
-        else:
+        #     self.is_line_start = False
+        #     self.signal_start_or_stop.emit(self.is_line_start)
+        #     self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+        #     self.slot_change_status(2)
+        # elif er_id >= 9750 and er_id < 9760:
+        #     self.is_line_start = False
+        #     self.signal_start_or_stop.emit(self.is_line_start)
+        #     self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+        #     self.slot_change_status(2)
+        # else:
             pass
             
 
@@ -153,6 +153,16 @@ class App(QWidget):
     # Меняет пороговое значение для нейросети
     signal_change_confidence_threshold = pyqtSignal(int, int)
             
+
+    def login(self, password):
+        
+        if password == "admin123":
+            self.flag = False
+            self.label_2.setText("<b style='color: green;'>***Пароль введен***</b>")
+        else:
+            self.flag = True
+            self.label_2.setText("<b style='color: red;'>***Для принятия всех изменений введите пароль***</b>")
+
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -203,14 +213,99 @@ class App(QWidget):
 
 
 
+        self.label_2 = QLabel()
+        self.label_2.setText("<b style='color: red;'>***Для принятия всех изменений введите пароль***</b>")
+        self.label_2.setWordWrap(True)
+        self.label_2.setFont(QFont(None, 20))
+        self.label_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Работа с паролем ++++++++++++++++++++++++++++++++++++++
+        self.lineEdit_password = QLineEdit()
+        self.lineEdit_password.textChanged.connect(self.login)
+        self.lineEdit_password.setFont(QFont(None, 20))
+        self.lineEdit_password.setEchoMode(QLineEdit.EchoMode.Password)
+        lable_password_name = QLabel("Пароль")
+        lable_password_name.setAlignment(Qt.AlignmentFlag.AlignRight)
+        lable_password_name.setFont(QFont(None, 20))
+        self.formLayout_2 = QFormLayout()
+        self.formLayout_2.addRow(self.lineEdit_password)
+        saveButton = QPushButton("Сохранить")
+        saveButton.setFont(QFont(None, 20))
+        cancelButton = QPushButton("Откатить")
+        cancelButton.setFont(QFont(None, 20))
+        # self.saveButton.pressed.connect(self.savePressed)
+        # Работа с паролем --------------------------------------
+        #--------------------------------------------------------
+        
 
+
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Настройка порогового значения++++++++++++++++++++++++++
+        self.lineEdit_confidence_threshold_0 = QLineEdit()
+        # self.lineEdit_confidence_threshold_0.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_0.setValidator(QIntValidator())
+        self.lineEdit_confidence_threshold_0.setMaxLength(4)
+        # self.lineEdit_confidence_threshold_0.setPlaceholderText(f"{self.right_1}")
+
+
+        self.lineEdit_confidence_threshold_1 = QLineEdit()
+        # self.lineEdit_confidence_threshold_0.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_1.setValidator(QIntValidator())
+        self.lineEdit_confidence_threshold_1.setMaxLength(4)
+        # self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.right_1}")
+
+
+        self.lineEdit_confidence_threshold_2 = QLineEdit()
+        # self.lineEdit_confidence_threshold_2.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_2.setValidator(QIntValidator())
+        self.lineEdit_confidence_threshold_2.setMaxLength(4)
+        # self.lineEdit_confidence_threshold_2.setPlaceholderText(f"{self.right_1}")
+
+
+        self.lineEdit_confidence_threshold_3 = QLineEdit()
+        # self.lineEdit_confidence_threshold_3.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_3.setValidator(QIntValidator())
+        self.lineEdit_confidence_threshold_3.setMaxLength(4)
+        # self.lineEdit_confidence_threshold_3.setPlaceholderText(f"{self.right_1}")
+
+
+        self.formLayout_1 = QFormLayout()
+        self.formLayout_1.addRow("ПЗ 1 (0-9999)", self.lineEdit_confidence_threshold_0)
+        self.formLayout_1.addRow("ПЗ 2 (0-9999)", self.lineEdit_confidence_threshold_1)
+        self.formLayout_1.addRow("ПЗ 3 (0-9999)", self.lineEdit_confidence_threshold_2)
+        self.formLayout_1.addRow("ПЗ 4 (0-9999)", self.lineEdit_confidence_threshold_3)
+        # Настройка порогового значения--------------------------
+        #--------------------------------------------------------
+
+
+        placeholder2 = QWidget()
+        placeholder2.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+
+
+        h_box_layout_password = QHBoxLayout()
+        h_box_layout_password.addWidget(lable_password_name, 1)
+        h_box_layout_password.addLayout(self.formLayout_2, 1)
+
+        h_box_layout_buttons = QHBoxLayout()
+        h_box_layout_buttons.addWidget(saveButton, 1)
+        h_box_layout_buttons.addWidget(cancelButton, 1)
+
+        v_box_layout_settings_widget = QVBoxLayout()
+        v_box_layout_settings_widget.addLayout(self.formLayout_1)
+        v_box_layout_settings_widget.addWidget(placeholder2)
+        v_box_layout_settings_widget.addWidget(self.label_2)
+        v_box_layout_settings_widget.addLayout(h_box_layout_password)
+        v_box_layout_settings_widget.addLayout(h_box_layout_buttons)
+        
+        settings_widget = QWidget()
+        settings_widget.setLayout(v_box_layout_settings_widget)
 
 
         tabs = QTabWidget()
         tabs.addTab(layout_vertical_box_main_widget, "Основная")
-        tabs.addTab(QWidget(), "Настройки")
+        tabs.addTab(settings_widget, "Настройки")
 
 
         main_layout = QVBoxLayout(self)

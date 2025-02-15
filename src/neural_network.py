@@ -40,7 +40,7 @@ class ManagePThread(QThread):
             self.signal_critical_error.emit(9750)
 
             #TODO: надо сделать автоматический выбор камер и если нет достаточного количества, то должно быть сообщено об ошибке пользователю 
-            # self.cam_index_0 = ids[0]
+            self.cam_index_0 = ids[0]
 
         else:
             self.cam_index_0 = ids[0] 
@@ -65,9 +65,9 @@ class ManagePThread(QThread):
         self.confidence_threshold_3 = self.manager.list([8000])
 
         self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
-        self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        # self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
+        # self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
 
@@ -96,9 +96,9 @@ class ManagePThread(QThread):
         logger.warning(f"Попытка закрытия программы")
         
         self.thread_4.terminate()
-        self.thread_5.terminate()
-        self.thread_6.terminate()
-        self.thread_7.terminate()
+        # self.thread_5.terminate()
+        # self.thread_6.terminate()
+        # self.thread_7.terminate()
         self.terminate()
 
     
@@ -159,7 +159,7 @@ class ManagePThread(QThread):
         
                     mlock.acquire()
                     counts_of_flaws[0] += 1
-                    logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold)/10000} *** {directory_with_boxes}/{file_name}.png")
+                    logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold[0])/10000} *** {directory_with_boxes}/{file_name}.png")
                     start_or_stop[0] = False
                     mlock.release()
               
@@ -176,12 +176,12 @@ class ManagePThread(QThread):
     def run(self):
        
         self.thread_4.start()
-        self.thread_5.start()
-        self.thread_6.start()
-        self.thread_7.start()
+        # self.thread_5.start()
+        # self.thread_6.start()
+        # self.thread_7.start()
 
 
         self.thread_4.join()
-        self.thread_5.join()
-        self.thread_6.join()
-        self.thread_7.join()
+        # self.thread_5.join()
+        # self.thread_6.join()
+        # self.thread_7.join()
