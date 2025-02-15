@@ -37,10 +37,10 @@ class ManagePThread(QThread):
         
         if(len(ids) < 4):
             logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
-            self.signal_critical_error.emit(0)
+            self.signal_critical_error.emit(9750)
 
             #TODO: надо сделать автоматический выбор камер и если нет достаточного количества, то должно быть сообщено об ошибке пользователю 
-            self.cam_index_0 = ids[0]
+            # self.cam_index_0 = ids[0]
 
         else:
             self.cam_index_0 = ids[0] 
@@ -48,8 +48,6 @@ class ManagePThread(QThread):
             self.cam_index_2 = ids[2]
             self.cam_index_3 = ids[3]
 
-
-        self.confidence_threshold = 8000 # 0 - 9999
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
@@ -61,8 +59,27 @@ class ManagePThread(QThread):
         self.counts_of_flaws_2 = self.manager.list([0])
         self.counts_of_flaws_3 = self.manager.list([0])
 
+        self.confidence_threshold_0 = self.manager.list([8000])
+        self.confidence_threshold_1 = self.manager.list([8000])
+        self.confidence_threshold_2 = self.manager.list([8000])
+        self.confidence_threshold_3 = self.manager.list([8000])
+
+        self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
+        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
+        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+
+
+
         self.start()
 
+    pyqtSlot(int, int)
+    def slot_change_confidence_threshold(self, confidence_threshold: int, ct_id: int):
+        if      ct_id == 0: self.confidence_threshold_0[0] = confidence_threshold
+        elif    ct_id == 1: self.confidence_threshold_1[0] = confidence_threshold
+        elif    ct_id == 2: self.confidence_threshold_2[0] = confidence_threshold
+        elif    ct_id == 3: self.confidence_threshold_3[0] = confidence_threshold
+        else:   logger.warning(f"Возникла проблема в slot_change_confidence_threshold, что-то не так с ct_id: {ct_id}, confidence_threshold: {confidence_threshold}")
 
     pyqtSlot(bool)
     def slot_start_stop(self, start: bool):
@@ -76,6 +93,13 @@ class ManagePThread(QThread):
         self.mlock.acquire()
         self.start_or_stop[1] = exit
         self.mlock.release()
+        logger.warning(f"Попытка закрытия программы")
+        
+        self.thread_4.terminate()
+        self.thread_5.terminate()
+        self.thread_6.terminate()
+        self.thread_7.terminate()
+        self.terminate()
 
     
     signal_get_error_count = pyqtSignal(int)
@@ -98,17 +122,17 @@ class ManagePThread(QThread):
     def yolo_data_processing(self, cam_index, confidence_threshold, start_or_stop, counts_of_flaws, mlock):
         model = YOLO(MODEL_PATH)
         try:
-            model.to('cuda')        
+            model.to('cuda')
         except:
-            pass
+            logger.warning(f"Нет возможности отправить вычисления на видеокарту для камеры с индексом {cam_index}. Вычисления происходят на процессоре")
 
         while(True):
 
             detections = model(cam_index, stream=True)
             
-                        
             for obj in detections:
-                opencv_array = obj.orig_img
+                opencv_array:cv2.Mat = obj.orig_img
+                
                 
                 #++++++++++++++++++++++++++++++++++++++++++++++++
                 # Этот участок кода должен быть удален для релиза
@@ -127,7 +151,7 @@ class ManagePThread(QThread):
                 for data in obj.boxes.data.tolist():
                     confidence = data[4]
 
-                    if float(confidence) < float(confidence_threshold)/10000:
+                    if float(confidence) < float(confidence_threshold[0])/10000:
                         continue
 
                     if not start_or_stop[0]:
@@ -151,19 +175,13 @@ class ManagePThread(QThread):
 
     def run(self):
        
-        thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        # thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
-        # thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        # thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        self.thread_4.start()
+        self.thread_5.start()
+        self.thread_6.start()
+        self.thread_7.start()
 
 
-        thread_4.start()
-        # thread_5.start()
-        # thread_6.start()
-        # thread_7.start()
-
-
-        thread_4.join()
-        # thread_5.join()
-        # thread_6.join()
-        # thread_7.join()
+        self.thread_4.join()
+        self.thread_5.join()
+        self.thread_6.join()
+        self.thread_7.join()

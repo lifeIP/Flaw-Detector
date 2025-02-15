@@ -31,6 +31,8 @@ class App(QWidget):
         self.width = 640
         self.height = 480
 
+        self.status = 0
+
         self.count_of_defects = 0
         self.is_line_start = False
 
@@ -39,7 +41,6 @@ class App(QWidget):
         self.manage = ManagePThread()
 
         self.serial_thread = QThread(self)
-
         from src.com_port import SenderThread
         self.manage_serial = SenderThread()
 
@@ -96,6 +97,11 @@ class App(QWidget):
 
     pyqtSlot()
     def slot_button_stop_or_start_line(self):
+        if self.status == 2:
+            import subprocess
+            subprocess.Popen(['systemctl', 'reboot'])
+            return
+
         self.is_line_start = not self.is_line_start
         self.signal_start_or_stop.emit(self.is_line_start)
         self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
@@ -105,6 +111,7 @@ class App(QWidget):
 
     @pyqtSlot(int)
     def slot_change_status(self, status):
+        self.status = status
         if status == 1:
             self.label_status.setText("СТАТУС: <b style='color: green;'>РАБОТЕТ</b>")
             self.button_stop_or_start_line.setText("Остановить дефектоскоп")
@@ -120,10 +127,31 @@ class App(QWidget):
 
 
     pyqtSlot(int)
-    def slot_critical_error(self, er_id):
-        print("critical_error", er_id)
+    def slot_send_critical_error(self, er_id):
+        
+        if er_id >= 9850 and er_id < 9860:
+            logger.warning(f"Был вызван обработчик критических ошибок: {er_id}")
+            
+            self.is_line_start = False
+            self.signal_start_or_stop.emit(self.is_line_start)
+            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+            self.slot_change_status(2)
+        elif er_id >= 9750 and er_id < 9760:
+            self.is_line_start = False
+            self.signal_start_or_stop.emit(self.is_line_start)
+            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+            self.slot_change_status(2)
+        else:
+            pass
+            
+
+
+            
         # TODO: При возникновении критических ошибок линия должна останавливаться, а также на экране должна отобразиться надпись ОШИБКА
 
+
+    # Меняет пороговое значение для нейросети
+    signal_change_confidence_threshold = pyqtSignal(int, int)
             
 
     def initUI(self):
@@ -162,7 +190,7 @@ class App(QWidget):
         self.button_stop_or_start_line.setFont(QFont(None, 28))
 
 
-        layout_vertical_box_main = QVBoxLayout(self)
+        layout_vertical_box_main = QVBoxLayout()
         layout_vertical_box_main.addWidget(label_count_of_defects_name, 2)
         layout_vertical_box_main.addWidget(self.label_count_of_defects, 2)
         layout_vertical_box_main.addWidget(button_reset_counter, 1)
@@ -170,20 +198,41 @@ class App(QWidget):
         layout_vertical_box_main.addWidget(self.label_status, 2)
         layout_vertical_box_main.addWidget(self.button_stop_or_start_line, 4)
 
+        layout_vertical_box_main_widget = QWidget()
+        layout_vertical_box_main_widget.setLayout(layout_vertical_box_main)
+
+
+
+
+
+
+
+
+        tabs = QTabWidget()
+        tabs.addTab(layout_vertical_box_main_widget, "Основная")
+        tabs.addTab(QWidget(), "Настройки")
+
+
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(tabs)
+
 
         self.signal_get_error_count.connect(self.manage.slot_get_error_count)        
         self.manage.signal_get_error_count.connect(self.slot_get_error_count)
 
 
-        self.manage.signal_critical_error.connect(self.slot_critical_error)
+        self.manage.signal_critical_error.connect(self.slot_send_critical_error)
         self.signal_start_or_stop.connect(self.manage.slot_start_stop)
         self.signal_close_thread.connect(self.manage.slot_exit_thread)
+        self.signal_change_confidence_threshold.connect(self.manage.slot_change_confidence_threshold)
         self.manage.moveToThread(self.worker_thread)
         self.worker_thread.start()
 
 
-        
         self.signal_start_stop_line.connect(self.manage_serial.slot_start_stop)
+        self.manage_serial.signal_critical_error.connect(self.slot_send_critical_error)
+
+
         self.manage_serial.moveToThread(self.serial_thread)
         self.serial_thread.start()
 

@@ -7,6 +7,7 @@ import serial
 from src.logger import logger
 
 class SenderThread(QThread):
+    signal_critical_error = pyqtSignal(int)
 
     pyqtSlot(bool)
     def slot_start_stop(self, flag:bool):
@@ -26,19 +27,20 @@ class SenderThread(QThread):
                 is_found = True
                 break
 
-            except serial.serialutil.SerialException:
+            except:
                 pass
 
         if not is_found:
             logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
-            return
+            self.signal_critical_error.emit(9850)
         
 
         try:
             self.serial_port = serial.Serial(self.port)
             self.serial_port.baudrate=9600
         except:
-            pass
+            logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 0")
+            self.signal_critical_error.emit(9851)
 
         self.line_is_start = "red"
         self.start()
@@ -46,13 +48,13 @@ class SenderThread(QThread):
 
     def run(self):
         while True:
-            
             try:
                 self.serial_port.writelines([self.line_is_start.encode()])
                 line = self.serial_port.readline()
                 
                 if "ONLINE" not in line:
                     logger.warning(f"Критическая ошибка: Не было получено корректного ответа от платы управления")
+                    self.signal_critical_error.emit(9852)
 
             except:
                 is_found = False
@@ -60,7 +62,8 @@ class SenderThread(QThread):
                 try:
                     self.serial_port.close()
                 except:
-                    pass
+                    logger.warning(f"Не удалось закрыть COM-порт: {self.port}")
+                    self.signal_critical_error.emit(9853)
 
                 for i in range(64) :
                     try :
@@ -70,14 +73,16 @@ class SenderThread(QThread):
                         is_found = True
                         break
 
-                    except serial.serialutil.SerialException:
+                    except:
                         pass
 
                 if not is_found:
                     logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
+                    self.signal_critical_error.emit(9854)
                 else:
                     try:
                         self.serial_port = serial.Serial(self.port)
                         self.serial_port.baudrate=9600
                     except:
-                        pass
+                        logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
+                        self.signal_critical_error.emit(9855)
