@@ -64,6 +64,15 @@ class ManagePThread(QThread):
         self.confidence_threshold_2 = self.manager.list([8000])
         self.confidence_threshold_3 = self.manager.list([8000])
 
+        with open("./settings.st", "r") as file:
+            lines = file.readlines()
+
+            self.confidence_threshold_0[0] = int(lines[0].rstrip())
+            self.confidence_threshold_1[0] = int(lines[1].rstrip())
+            self.confidence_threshold_2[0] = int(lines[2].rstrip())
+            self.confidence_threshold_3[0] = int(lines[3].rstrip())
+            
+
         self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
         # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
         # self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))

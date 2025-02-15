@@ -175,18 +175,22 @@ class App(QWidget):
     def change_confidence_threshold_0(self, value):
         if value == "": self.confidence_threshold_0 = int(self.lineEdit_confidence_threshold_0.placeholderText())
         else: self.confidence_threshold_0 = int(value)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 0)
 
     def change_confidence_threshold_1(self, value):
         if value == "": self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         else: self.confidence_threshold_1 = int(value)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 1)
     
     def change_confidence_threshold_2(self, value):
         if value == "": self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         else: self.confidence_threshold_2 = int(value)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 2)
     
     def change_confidence_threshold_3(self, value):
         if value == "": self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
         else: self.confidence_threshold_3 = int(value)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 3)
     
 
     def login(self, password):
@@ -240,6 +244,9 @@ class App(QWidget):
         self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
+
+        self.lineEdit_password.clear()
+        self.login("")
         
 
 
@@ -416,6 +423,7 @@ class App(QWidget):
         self.manage.signal_get_error_count.connect(self.slot_get_error_count)
 
 
+        self.signal_change_confidence_threshold.connect(self.manage.slot_change_confidence_threshold)
         self.manage.signal_critical_error.connect(self.slot_send_critical_error)
         self.signal_start_or_stop.connect(self.manage.slot_start_stop)
         self.signal_close_thread.connect(self.manage.slot_exit_thread)
@@ -426,6 +434,9 @@ class App(QWidget):
 
         self.signal_start_stop_line.connect(self.manage_serial.slot_start_stop)
         self.manage_serial.signal_critical_error.connect(self.slot_send_critical_error)
+
+        
+        
 
 
         self.manage_serial.moveToThread(self.serial_thread)
