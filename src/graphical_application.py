@@ -173,19 +173,19 @@ class App(QWidget):
     
 
     def change_confidence_threshold_0(self, value):
-        if value == "": self.confidence_threshold_0 = 0
+        if value == "": self.confidence_threshold_0 = int(self.lineEdit_confidence_threshold_0.placeholderText())
         else: self.confidence_threshold_0 = int(value)
 
     def change_confidence_threshold_1(self, value):
-        if value == "": self.confidence_threshold_1 = 0
+        if value == "": self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         else: self.confidence_threshold_1 = int(value)
     
     def change_confidence_threshold_2(self, value):
-        if value == "": self.confidence_threshold_2 = 0
+        if value == "": self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         else: self.confidence_threshold_2 = int(value)
     
     def change_confidence_threshold_3(self, value):
-        if value == "": self.confidence_threshold_3 = 0
+        if value == "": self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
         else: self.confidence_threshold_3 = int(value)
     
 
@@ -341,7 +341,7 @@ class App(QWidget):
 
 
         self.lineEdit_confidence_threshold_1 = QLineEdit()
-        self.lineEdit_confidence_threshold_0.textChanged.connect(self.change_confidence_threshold_1)
+        self.lineEdit_confidence_threshold_1.textChanged.connect(self.change_confidence_threshold_1)
         self.lineEdit_confidence_threshold_1.setValidator(QIntValidator())
         self.lineEdit_confidence_threshold_1.setMaxLength(4)
         self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.confidence_threshold_1}")
