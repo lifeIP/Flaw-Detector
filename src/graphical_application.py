@@ -132,14 +132,17 @@ class App(QWidget):
         self.status = status
         if status == 1:
             self.label_status.setText("СТАТУС: <b style='color: green;'>РАБОТЕТ</b>")
+            self.bug_report_status.setText("СТАТУС: <b style='color: green;'>РАБОТЕТ</b>")
             self.button_stop_or_start_line.setText("Остановить дефектоскоп")
             self.line_status = 1
         elif status == 0:
             self.label_status.setText("СТАТУС: <b style='color: blue;'>ОСТАНОВЛЕН</b>")
+            self.bug_report_status.setText("СТАТУС: <b style='color: blue;'>ОСТАНОВЛЕН</b>")
             self.button_stop_or_start_line.setText("Запустить дефектоскоп")
             self.line_status = 0
         elif status == 2:
             self.label_status.setText("СТАТУС: <b style='color: red;'>ОШИБКА</b>")
+            self.bug_report_status.setText("СТАТУС: <b style='color: red;'>ОШИБКА</b>")
             self.line_status = 2
             self.button_stop_or_start_line.setText("ПЕРЕЗАГРУЗКА")
 
@@ -147,19 +150,21 @@ class App(QWidget):
     pyqtSlot(int)
     def slot_send_critical_error(self, er_id):
         # TODO: Надо раскоментировать
-        # if er_id >= 9850 and er_id < 9860:
-        #     logger.warning(f"Был вызван обработчик критических ошибок: {er_id}")
-            
-        #     self.is_line_start = False
-        #     self.signal_start_or_stop.emit(self.is_line_start)
-        #     self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
-        #     self.slot_change_status(2)
-        # elif er_id >= 9750 and er_id < 9760:
-        #     self.is_line_start = False
-        #     self.signal_start_or_stop.emit(self.is_line_start)
-        #     self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
-        #     self.slot_change_status(2)
-        # else:
+        if er_id >= 9850 and er_id < 9860:
+            logger.warning(f"Был вызван обработчик критических ошибок: {er_id}")
+            self.bug_report_label.setText("<b style='color: red;'>Проблема С COM-портом. Проверьте физическое подключение и перезагрузите ПО</b>")
+
+            self.is_line_start = False
+            self.signal_start_or_stop.emit(self.is_line_start)
+            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+            self.slot_change_status(2)
+        
+        elif er_id >= 9750 and er_id < 9760:
+            self.is_line_start = False
+            self.signal_start_or_stop.emit(self.is_line_start)
+            self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+            self.slot_change_status(2)
+        else:
             pass
             
 
@@ -392,15 +397,34 @@ class App(QWidget):
         #--------------------------------------------------------
 
         
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Баг репорт с перезагрузкой+++++++++++++++++++++++++++++
+        self.bug_report_status = QLabel("СТАТУС")
+        self.bug_report_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.bug_report_status.setFont(QFont(None, 20))
 
+        self.bug_report_label = QLabel("Нет проблем")
+        self.bug_report_label.setWordWrap(True)
+        self.bug_report_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.bug_report_label.setFont(QFont(None, 20))
+
+        v_box_layout_bug_report = QVBoxLayout()
+        v_box_layout_bug_report.addWidget(self.bug_report_status)
+        v_box_layout_bug_report.addWidget(self.bug_report_label)
+        # Баг репорт с перезагрузкой-----------------------------
+        #--------------------------------------------------------
 
         
         placeholder2 = QWidget()
         placeholder2.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+        placeholder3 = QWidget()
+        placeholder3.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         
         v_box_layout_settings_widget = QVBoxLayout()
         v_box_layout_settings_widget.addLayout(self.formLayout_1)
         v_box_layout_settings_widget.addWidget(placeholder2)
+        v_box_layout_settings_widget.addLayout(v_box_layout_bug_report)
+        v_box_layout_settings_widget.addWidget(placeholder3)
         v_box_layout_settings_widget.addWidget(self.label_2)
         v_box_layout_settings_widget.addLayout(self.formLayout_2)
         v_box_layout_settings_widget.addLayout(h_box_layout_buttons)
@@ -435,12 +459,8 @@ class App(QWidget):
         self.signal_start_stop_line.connect(self.manage_serial.slot_start_stop)
         self.manage_serial.signal_critical_error.connect(self.slot_send_critical_error)
 
-        
-        
-
 
         self.manage_serial.moveToThread(self.serial_thread)
         self.serial_thread.start()
-
 
         self.show()
