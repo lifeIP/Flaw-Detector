@@ -31,6 +31,11 @@ class App(QWidget):
         self.width = 640
         self.height = 480
 
+        self.confidence_threshold_0 = 0
+        self.confidence_threshold_1 = 0
+        self.confidence_threshold_2 = 0
+        self.confidence_threshold_3 = 0
+
         self.status = 0
 
         self.count_of_defects = 0
@@ -49,9 +54,22 @@ class App(QWidget):
         self.timer.timeout.connect(self.slot_timer_timeout)
 
 
+        with open("./settings.st", "r") as file:
+            lines = file.readlines()
+
+            self.confidence_threshold_0 = lines[0].rstrip()
+            self.confidence_threshold_1 = lines[1].rstrip()
+            self.confidence_threshold_2 = lines[2].rstrip()
+            self.confidence_threshold_3 = lines[3].rstrip()
+            
+
         self.initUI()
+
+        self.login("")
+        
         self.slot_change_status(1 if self.is_line_start else 0)
         self.timer.start(300)
+        
 
 
     pyqtSlot()
@@ -152,7 +170,24 @@ class App(QWidget):
 
     # Меняет пороговое значение для нейросети
     signal_change_confidence_threshold = pyqtSignal(int, int)
-            
+    
+
+    def change_confidence_threshold_0(self, value):
+        if value == "": self.confidence_threshold_0 = 0
+        else: self.confidence_threshold_0 = int(value)
+
+    def change_confidence_threshold_1(self, value):
+        if value == "": self.confidence_threshold_1 = 0
+        else: self.confidence_threshold_1 = int(value)
+    
+    def change_confidence_threshold_2(self, value):
+        if value == "": self.confidence_threshold_2 = 0
+        else: self.confidence_threshold_2 = int(value)
+    
+    def change_confidence_threshold_3(self, value):
+        if value == "": self.confidence_threshold_3 = 0
+        else: self.confidence_threshold_3 = int(value)
+    
 
     def login(self, password):
         
@@ -161,7 +196,51 @@ class App(QWidget):
             self.label_2.setText("<b style='color: green;'>***Пароль введен***</b>")
         else:
             self.flag = True
-            self.label_2.setText("<b style='color: red;'>***Для принятия всех изменений введите пароль***</b>")
+            self.label_2.setText("<b style='color: red;'>***Введите пароль***</b>")
+
+        
+        self.lineEdit_confidence_threshold_0.setEnabled(not self.flag)
+        self.lineEdit_confidence_threshold_1.setEnabled(not self.flag)
+        self.lineEdit_confidence_threshold_2.setEnabled(not self.flag)
+        self.lineEdit_confidence_threshold_3.setEnabled(not self.flag)
+        self.saveButton.setEnabled(not self.flag)
+        self.cancelButton.setEnabled(not self.flag)
+        
+
+    def btnSavePressed(self):
+        with open("./settings.st", "w") as file:
+
+            lines = [self.confidence_threshold_0,
+                     self.confidence_threshold_1, 
+                     self.confidence_threshold_2,
+                     self.confidence_threshold_3]
+            
+            
+            for line in lines: 
+                file.write(str(line) + '\n')
+
+        self.lineEdit_confidence_threshold_0.setPlaceholderText(f"{self.confidence_threshold_0}")
+        self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.confidence_threshold_1}")
+        self.lineEdit_confidence_threshold_2.setPlaceholderText(f"{self.confidence_threshold_2}")
+        self.lineEdit_confidence_threshold_3.setPlaceholderText(f"{self.confidence_threshold_3}")
+
+        self.lineEdit_password.clear()
+        self.login("")
+        
+        # TODO: Надо сделать отправку
+        
+
+    def btnCancelPressed(self):
+        self.lineEdit_confidence_threshold_0.clear()
+        self.lineEdit_confidence_threshold_1.clear()
+        self.lineEdit_confidence_threshold_2.clear()
+        self.lineEdit_confidence_threshold_3.clear()
+
+        self.confidence_threshold_0 = int(self.lineEdit_confidence_threshold_0.placeholderText())
+        self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
+        self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
+        self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
+        
 
 
     def initUI(self):
@@ -214,7 +293,7 @@ class App(QWidget):
 
 
         self.label_2 = QLabel()
-        self.label_2.setText("<b style='color: red;'>***Для принятия всех изменений введите пароль***</b>")
+        self.label_2.setText("<b style='color: red;'>***Введите пароль***</b>")
         self.label_2.setWordWrap(True)
         self.label_2.setFont(QFont(None, 20))
         self.label_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -226,77 +305,97 @@ class App(QWidget):
         self.lineEdit_password.textChanged.connect(self.login)
         self.lineEdit_password.setFont(QFont(None, 20))
         self.lineEdit_password.setEchoMode(QLineEdit.EchoMode.Password)
+
         lable_password_name = QLabel("Пароль")
-        lable_password_name.setAlignment(Qt.AlignmentFlag.AlignRight)
         lable_password_name.setFont(QFont(None, 20))
+        
         self.formLayout_2 = QFormLayout()
-        self.formLayout_2.addRow(self.lineEdit_password)
-        saveButton = QPushButton("Сохранить")
-        saveButton.setFont(QFont(None, 20))
-        cancelButton = QPushButton("Откатить")
-        cancelButton.setFont(QFont(None, 20))
-        # self.saveButton.pressed.connect(self.savePressed)
+        self.formLayout_2.addRow(lable_password_name, self.lineEdit_password)
+
+        self.saveButton = QPushButton("Сохранить")
+        self.saveButton.setFont(QFont(None, 20))
+        self.saveButton.pressed.connect(self.btnSavePressed)
+        
+        self.cancelButton = QPushButton("Откатить")
+        self.cancelButton.setFont(QFont(None, 20))
+        self.cancelButton.pressed.connect(self.btnCancelPressed)
+
+        h_box_layout_buttons = QHBoxLayout()
+        h_box_layout_buttons.addWidget(self.saveButton, 1)
+        h_box_layout_buttons.addWidget(self.cancelButton, 1)
+        
         # Работа с паролем --------------------------------------
         #--------------------------------------------------------
         
 
 
+
         #++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # Настройка порогового значения++++++++++++++++++++++++++
         self.lineEdit_confidence_threshold_0 = QLineEdit()
-        # self.lineEdit_confidence_threshold_0.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_0.textChanged.connect(self.change_confidence_threshold_0)
         self.lineEdit_confidence_threshold_0.setValidator(QIntValidator())
         self.lineEdit_confidence_threshold_0.setMaxLength(4)
-        # self.lineEdit_confidence_threshold_0.setPlaceholderText(f"{self.right_1}")
+        self.lineEdit_confidence_threshold_0.setPlaceholderText(f"{self.confidence_threshold_0}")
+        self.lineEdit_confidence_threshold_0.setFont(QFont(None, 20))
 
 
         self.lineEdit_confidence_threshold_1 = QLineEdit()
-        # self.lineEdit_confidence_threshold_0.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_0.textChanged.connect(self.change_confidence_threshold_1)
         self.lineEdit_confidence_threshold_1.setValidator(QIntValidator())
         self.lineEdit_confidence_threshold_1.setMaxLength(4)
-        # self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.right_1}")
+        self.lineEdit_confidence_threshold_1.setPlaceholderText(f"{self.confidence_threshold_1}")
+        self.lineEdit_confidence_threshold_1.setFont(QFont(None, 20))
 
 
         self.lineEdit_confidence_threshold_2 = QLineEdit()
-        # self.lineEdit_confidence_threshold_2.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_2.textChanged.connect(self.change_confidence_threshold_2)
         self.lineEdit_confidence_threshold_2.setValidator(QIntValidator())
         self.lineEdit_confidence_threshold_2.setMaxLength(4)
-        # self.lineEdit_confidence_threshold_2.setPlaceholderText(f"{self.right_1}")
+        self.lineEdit_confidence_threshold_2.setPlaceholderText(f"{self.confidence_threshold_2}")
+        self.lineEdit_confidence_threshold_2.setFont(QFont(None, 20))
 
 
         self.lineEdit_confidence_threshold_3 = QLineEdit()
-        # self.lineEdit_confidence_threshold_3.textChanged.connect(self.rightchanged_1)
+        self.lineEdit_confidence_threshold_3.textChanged.connect(self.change_confidence_threshold_3)
         self.lineEdit_confidence_threshold_3.setValidator(QIntValidator())
         self.lineEdit_confidence_threshold_3.setMaxLength(4)
-        # self.lineEdit_confidence_threshold_3.setPlaceholderText(f"{self.right_1}")
+        self.lineEdit_confidence_threshold_3.setPlaceholderText(f"{self.confidence_threshold_3}")
+        self.lineEdit_confidence_threshold_3.setFont(QFont(None, 20))
 
+
+        label_PZ_0 = QLabel("ПЗ 1 (0-9999)")
+        label_PZ_0.setFont(QFont(None, 20))
+
+        label_PZ_1 = QLabel("ПЗ 2 (0-9999)")
+        label_PZ_1.setFont(QFont(None, 20))
+
+        label_PZ_2 = QLabel("ПЗ 3 (0-9999)")
+        label_PZ_2.setFont(QFont(None, 20))
+
+        label_PZ_3 = QLabel("ПЗ 4 (0-9999)")
+        label_PZ_3.setFont(QFont(None, 20))
 
         self.formLayout_1 = QFormLayout()
-        self.formLayout_1.addRow("ПЗ 1 (0-9999)", self.lineEdit_confidence_threshold_0)
-        self.formLayout_1.addRow("ПЗ 2 (0-9999)", self.lineEdit_confidence_threshold_1)
-        self.formLayout_1.addRow("ПЗ 3 (0-9999)", self.lineEdit_confidence_threshold_2)
-        self.formLayout_1.addRow("ПЗ 4 (0-9999)", self.lineEdit_confidence_threshold_3)
+        self.formLayout_1.addRow(label_PZ_0, self.lineEdit_confidence_threshold_0)
+        self.formLayout_1.addRow(label_PZ_1, self.lineEdit_confidence_threshold_1)
+        self.formLayout_1.addRow(label_PZ_2, self.lineEdit_confidence_threshold_2)
+        self.formLayout_1.addRow(label_PZ_3, self.lineEdit_confidence_threshold_3)
         # Настройка порогового значения--------------------------
         #--------------------------------------------------------
 
+        
 
+
+        
         placeholder2 = QWidget()
         placeholder2.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
-
-
-        h_box_layout_password = QHBoxLayout()
-        h_box_layout_password.addWidget(lable_password_name, 1)
-        h_box_layout_password.addLayout(self.formLayout_2, 1)
-
-        h_box_layout_buttons = QHBoxLayout()
-        h_box_layout_buttons.addWidget(saveButton, 1)
-        h_box_layout_buttons.addWidget(cancelButton, 1)
-
+        
         v_box_layout_settings_widget = QVBoxLayout()
         v_box_layout_settings_widget.addLayout(self.formLayout_1)
         v_box_layout_settings_widget.addWidget(placeholder2)
         v_box_layout_settings_widget.addWidget(self.label_2)
-        v_box_layout_settings_widget.addLayout(h_box_layout_password)
+        v_box_layout_settings_widget.addLayout(self.formLayout_2)
         v_box_layout_settings_widget.addLayout(h_box_layout_buttons)
         
         settings_widget = QWidget()
@@ -304,8 +403,9 @@ class App(QWidget):
 
 
         tabs = QTabWidget()
-        tabs.addTab(layout_vertical_box_main_widget, "Основная")
+        tabs.addTab(layout_vertical_box_main_widget, "Главная")
         tabs.addTab(settings_widget, "Настройки")
+        tabs.addTab(QWidget(), "О программе")
 
 
         main_layout = QVBoxLayout(self)
