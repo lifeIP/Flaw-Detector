@@ -51,6 +51,7 @@ class ManagePThread(QThread):
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
+
         
         self.start_or_stop = self.manager.list([False, False])
 
@@ -71,7 +72,7 @@ class ManagePThread(QThread):
             self.confidence_threshold_1[0] = int(lines[1].rstrip())
             self.confidence_threshold_2[0] = int(lines[2].rstrip())
             self.confidence_threshold_3[0] = int(lines[3].rstrip())
-            
+
 
         self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
         # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
@@ -160,7 +161,11 @@ class ManagePThread(QThread):
                 for data in obj.boxes.data.tolist():
                     confidence = data[4]
 
-                    if float(confidence) < float(confidence_threshold[0])/10000:
+                    mlock.acquire()
+                    ct_conf = float(confidence_threshold[0])/10000
+                    mlock.release()
+                    
+                    if float(confidence) < ct_conf:
                         continue
 
                     if not start_or_stop[0]:

@@ -175,22 +175,18 @@ class App(QWidget):
     def change_confidence_threshold_0(self, value):
         if value == "": self.confidence_threshold_0 = int(self.lineEdit_confidence_threshold_0.placeholderText())
         else: self.confidence_threshold_0 = int(value)
-        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 0)
 
     def change_confidence_threshold_1(self, value):
         if value == "": self.confidence_threshold_1 = int(self.lineEdit_confidence_threshold_1.placeholderText())
         else: self.confidence_threshold_1 = int(value)
-        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 1)
     
     def change_confidence_threshold_2(self, value):
         if value == "": self.confidence_threshold_2 = int(self.lineEdit_confidence_threshold_2.placeholderText())
         else: self.confidence_threshold_2 = int(value)
-        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 2)
     
     def change_confidence_threshold_3(self, value):
         if value == "": self.confidence_threshold_3 = int(self.lineEdit_confidence_threshold_3.placeholderText())
         else: self.confidence_threshold_3 = int(value)
-        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 3)
     
 
     def login(self, password):
@@ -230,6 +226,11 @@ class App(QWidget):
 
         self.lineEdit_password.clear()
         self.login("")
+
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_0, 0)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_1, 1)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_2, 2)
+        self.signal_change_confidence_threshold.emit(self.confidence_threshold_3, 3)
         
         # TODO: Надо сделать отправку
         
@@ -330,7 +331,6 @@ class App(QWidget):
         h_box_layout_buttons = QHBoxLayout()
         h_box_layout_buttons.addWidget(self.saveButton, 1)
         h_box_layout_buttons.addWidget(self.cancelButton, 1)
-        
         # Работа с паролем --------------------------------------
         #--------------------------------------------------------
         
