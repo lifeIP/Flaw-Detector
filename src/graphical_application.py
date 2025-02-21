@@ -180,7 +180,6 @@ class App(QWidget):
         self.slot_change_status(1 if self.is_line_start else 0)
 
 
-
     @pyqtSlot(int)
     def slot_change_status(self, status):
         self.status = status
@@ -199,6 +198,29 @@ class App(QWidget):
             self.bug_report_status.setText("СТАТУС: <b style='color: red;'>ОШИБКА</b>")
             self.line_status = 2
             self.button_stop_or_start_line.setText("ПЕРЕЗАГРУЗКА")
+
+
+        path_to_flaw = ""
+        with open("last_flaw", "r") as f:
+            path_to_flaw = f.readlines()
+        
+        if len(path_to_flaw) == 0: return
+        
+        if path_to_flaw[0] == "":
+            return
+
+        with open("last_flaw", "w") as f:
+            f.write("")
+
+
+        import cv2
+        src = cv2.imread(path_to_flaw[0].rstrip())
+        rgbImage_0 = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
+        h0, w0, ch0 = rgbImage_0.shape
+        bytesPerLine_0 = ch0 * w0
+        convertToQtFormat_0 = QImage(rgbImage_0.data, w0, h0, bytesPerLine_0, QImage.Format.Format_RGB888)
+        p_0 = convertToQtFormat_0.scaled(300, 250, Qt.AspectRatioMode.KeepAspectRatio)
+        self.pixmap_0.setPixmap(QPixmap.fromImage(p_0))
 
 
     pyqtSlot(int)
@@ -340,6 +362,9 @@ class App(QWidget):
         button_reset_counter.setFont(QFont(None, 28))
         button_reset_counter.clicked.connect(self.slot_reset_defects_counter)
 
+        self.pixmap_0 = QLabel()
+        self.pixmap_0.setScaledContents(True)
+        self.pixmap_0.setMaximumWidth(350)
 
         self.label_status = QLabel("СТАТУС")
         self.label_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -348,6 +373,8 @@ class App(QWidget):
 
         placeholder = QWidget()
         placeholder.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+        placeholder_1 = QWidget()
+        placeholder_1.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
 
 
         self.button_stop_or_start_line = QPushButton()
@@ -361,7 +388,9 @@ class App(QWidget):
         layout_vertical_box_main.addWidget(label_count_of_defects_name, 2)
         layout_vertical_box_main.addWidget(self.label_count_of_defects, 2)
         layout_vertical_box_main.addWidget(button_reset_counter, 1)
-        layout_vertical_box_main.addWidget(placeholder, 5)
+        layout_vertical_box_main.addWidget(placeholder, 1)
+        layout_vertical_box_main.addWidget(self.pixmap_0, 4)
+        layout_vertical_box_main.addWidget(placeholder_1, 1)
         layout_vertical_box_main.addWidget(self.label_status, 2)
         layout_vertical_box_main.addWidget(self.button_stop_or_start_line, 4)
 

@@ -39,8 +39,8 @@ class ManagePThread(QThread):
             logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
             self.signal_critical_error.emit(9750)
 
-            # self.cam_index_0 = ids[0]
-            exit(1)
+            self.cam_index_0 = ids[0]
+            # exit(1)
 
         else:
             self.cam_index_0 = ids[0] 
@@ -75,9 +75,9 @@ class ManagePThread(QThread):
 
 
         self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
-        self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        # self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
+        # self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
 
@@ -106,9 +106,9 @@ class ManagePThread(QThread):
         logger.warning(f"Попытка закрытия программы")
         
         self.thread_4.terminate()
-        self.thread_5.terminate()
-        self.thread_6.terminate()
-        self.thread_7.terminate()
+        # self.thread_5.terminate()
+        # self.thread_6.terminate()
+        # self.thread_7.terminate()
         self.terminate()
 
     
@@ -173,6 +173,11 @@ class ManagePThread(QThread):
         
                     mlock.acquire()
                     counts_of_flaws[0] += 1
+                    
+                    file_with_flaw = f"{directory_with_boxes}/{file_name}.png"
+                    with open("last_flaw", "w") as f:
+                        f.writelines([file_with_flaw + "\n", str(float(confidence)) + "\n", str(float(confidence_threshold[0])/10000)+"\n"])
+
                     logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold[0])/10000} *** {directory_with_boxes}/{file_name}.png")
                     start_or_stop[0] = False
                     mlock.release()
@@ -181,7 +186,7 @@ class ManagePThread(QThread):
                         os.makedirs(directory_with_boxes)
 
                     xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
-                    cv2.rectangle(opencv_array, (xmin, ymin) , (xmax, ymax), (0, 255, 0), 2)
+                    cv2.rectangle(opencv_array, (xmin, ymin) , (xmax, ymax), (0, 0, 255), 3)
                     
                     cv2.imwrite(f"{directory_with_boxes}/{file_name}.png", opencv_array)
             
@@ -190,12 +195,12 @@ class ManagePThread(QThread):
     def run(self):
        
         self.thread_4.start()
-        self.thread_5.start()
-        self.thread_6.start()
-        self.thread_7.start()
+        # self.thread_5.start()
+        # self.thread_6.start()
+        # self.thread_7.start()
 
 
         self.thread_4.join()
-        self.thread_5.join()
-        self.thread_6.join()
-        self.thread_7.join()
+        # self.thread_5.join()
+        # self.thread_6.join()
+        # self.thread_7.join()

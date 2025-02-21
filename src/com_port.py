@@ -88,6 +88,6 @@ class SenderThread(QThread):
                         logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
                         self.signal_critical_error.emit(9855)
                 
-                time.sleep(15)
+                # time.sleep(15)
 
                 
