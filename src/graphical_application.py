@@ -223,7 +223,7 @@ class App(QWidget):
             p_0 = convertToQtFormat_0.scaled(300, 250, Qt.AspectRatioMode.KeepAspectRatio)
             self.pixmap_0.setPixmap(QPixmap.fromImage(p_0))
 
-            self.label_value.setText(f"{path_to_flaw[1].rstrip()}/{path_to_flaw[2].rstrip()}")
+            self.label_value.setText(f"{int(float(path_to_flaw[1].rstrip())*100)}% / {int(float(path_to_flaw[2].rstrip())*100)}%")
         except:
             pass
 
@@ -376,7 +376,8 @@ class App(QWidget):
         self.pixmap_0.setMaximumWidth(350)
         
         self.label_value = QLabel()
-        self.label_value.setFont(QFont(None, 20))        
+        self.label_value.setFont(QFont(None, 20))  
+        self.label_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_flaw_photo.addWidget(self.pixmap_0, 5)
         layout_flaw_photo.addWidget(self.label_value, 1)
 
