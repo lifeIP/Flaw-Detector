@@ -34,7 +34,7 @@ class SenderThread(QThread):
         if not is_found:
             logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
             self.signal_critical_error.emit(9850)
-        
+            return
 
         try:
             self.serial_port = serial.Serial(self.port)
@@ -42,6 +42,7 @@ class SenderThread(QThread):
         except:
             logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 0")
             self.signal_critical_error.emit(9851)
+            return
 
         self.line_is_start = "red"
         self.start()
@@ -56,6 +57,7 @@ class SenderThread(QThread):
                 if "ONLINE" not in line:
                     logger.warning(f"Критическая ошибка: Не было получено корректного ответа от платы управления")
                     self.signal_critical_error.emit(9852)
+                    return
 
             except:
                 is_found = False
@@ -65,6 +67,7 @@ class SenderThread(QThread):
                 except:
                     logger.warning(f"Не удалось закрыть COM-порт: {self.port}")
                     self.signal_critical_error.emit(9853)
+                    return
 
                 for i in range(64) :
                     try :
@@ -80,6 +83,7 @@ class SenderThread(QThread):
                 if not is_found:
                     logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
                     self.signal_critical_error.emit(9854)
+                    return
                 else:
                     try:
                         self.serial_port = serial.Serial(self.port)
@@ -87,7 +91,6 @@ class SenderThread(QThread):
                     except:
                         logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
                         self.signal_critical_error.emit(9855)
-                
-                # time.sleep(15)
+                        return
 
                 

@@ -200,27 +200,32 @@ class App(QWidget):
             self.button_stop_or_start_line.setText("ПЕРЕЗАГРУЗКА")
 
 
-        path_to_flaw = ""
-        with open("last_flaw", "r") as f:
-            path_to_flaw = f.readlines()
-        
-        if len(path_to_flaw) == 0: return
-        
-        if path_to_flaw[0] == "":
-            return
+        try:
+            path_to_flaw = ""
+            with open("last_flaw", "r") as f:
+                path_to_flaw = f.readlines()
+            
+            if len(path_to_flaw) == 0: return
 
-        with open("last_flaw", "w") as f:
-            f.write("")
+            if path_to_flaw[0].rstrip() == "":
+                return
+
+            with open("last_flaw", "w") as f:
+                f.write("")
 
 
-        import cv2
-        src = cv2.imread(path_to_flaw[0].rstrip())
-        rgbImage_0 = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
-        h0, w0, ch0 = rgbImage_0.shape
-        bytesPerLine_0 = ch0 * w0
-        convertToQtFormat_0 = QImage(rgbImage_0.data, w0, h0, bytesPerLine_0, QImage.Format.Format_RGB888)
-        p_0 = convertToQtFormat_0.scaled(300, 250, Qt.AspectRatioMode.KeepAspectRatio)
-        self.pixmap_0.setPixmap(QPixmap.fromImage(p_0))
+            import cv2
+            src = cv2.imread(path_to_flaw[0].rstrip())
+            rgbImage_0 = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
+            h0, w0, ch0 = rgbImage_0.shape
+            bytesPerLine_0 = ch0 * w0
+            convertToQtFormat_0 = QImage(rgbImage_0.data, w0, h0, bytesPerLine_0, QImage.Format.Format_RGB888)
+            p_0 = convertToQtFormat_0.scaled(300, 250, Qt.AspectRatioMode.KeepAspectRatio)
+            self.pixmap_0.setPixmap(QPixmap.fromImage(p_0))
+
+            self.label_value.setText(f"{path_to_flaw[1].rstrip()}/{path_to_flaw[2].rstrip()}")
+        except:
+            pass
 
 
     pyqtSlot(int)
@@ -362,9 +367,18 @@ class App(QWidget):
         button_reset_counter.setFont(QFont(None, 28))
         button_reset_counter.clicked.connect(self.slot_reset_defects_counter)
 
+
+        
+        layout_flaw_photo = QVBoxLayout()
+        layout_flaw_photo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pixmap_0 = QLabel()
         self.pixmap_0.setScaledContents(True)
         self.pixmap_0.setMaximumWidth(350)
+        
+        self.label_value = QLabel()
+        self.label_value.setFont(QFont(None, 20))        
+        layout_flaw_photo.addWidget(self.pixmap_0, 5)
+        layout_flaw_photo.addWidget(self.label_value, 1)
 
         self.label_status = QLabel("СТАТУС")
         self.label_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -389,7 +403,7 @@ class App(QWidget):
         layout_vertical_box_main.addWidget(self.label_count_of_defects, 2)
         layout_vertical_box_main.addWidget(button_reset_counter, 1)
         layout_vertical_box_main.addWidget(placeholder, 1)
-        layout_vertical_box_main.addWidget(self.pixmap_0, 4)
+        layout_vertical_box_main.addLayout(layout_flaw_photo, 4)
         layout_vertical_box_main.addWidget(placeholder_1, 1)
         layout_vertical_box_main.addWidget(self.label_status, 2)
         layout_vertical_box_main.addWidget(self.button_stop_or_start_line, 4)
