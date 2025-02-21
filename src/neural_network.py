@@ -178,6 +178,10 @@ class ManagePThread(QThread):
                     with open("last_flaw", "w") as f:
                         f.writelines([file_with_flaw + "\n", str(float(confidence)) + "\n", str(float(confidence_threshold[0])/10000)+"\n"])
 
+                    with open("list_of_flaw", "a") as f:
+                        f.write(f"{datetime.today().strftime('%Y.%m.%d.%H:%M:%S')} {file_with_flaw} {str(float(confidence))} {str(float(confidence_threshold[0])/10000)}\n")
+
+
                     logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold[0])/10000} *** {directory_with_boxes}/{file_name}.png")
                     start_or_stop[0] = False
                     mlock.release()

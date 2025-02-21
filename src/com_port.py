@@ -34,7 +34,7 @@ class SenderThread(QThread):
         if not is_found:
             logger.warning(f"Критическая ошибка: не было найдено подключенного com-порт устройства")
             self.signal_critical_error.emit(9850)
-            return
+            
 
         try:
             self.serial_port = serial.Serial(self.port)
@@ -42,7 +42,7 @@ class SenderThread(QThread):
         except:
             logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 0")
             self.signal_critical_error.emit(9851)
-            return
+            
 
         self.line_is_start = "red"
         self.start()
@@ -92,5 +92,6 @@ class SenderThread(QThread):
                         logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
                         self.signal_critical_error.emit(9855)
                         return
+                # time.sleep(15)
 
                 
