@@ -49,6 +49,9 @@ class ManagePThread(QThread):
         #     self.cam_index_3 = ids[3]
 
         self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.0.65:554/h264Preview_01_main'
+        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.0.66:554/h264Preview_01_main'
+        self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.0.67:554/h264Preview_01_main'
+        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.0.68:554/h264Preview_01_main'
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
