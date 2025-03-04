@@ -24,30 +24,31 @@ class ManagePThread(QThread):
         super().__init__()
         
         # получаем список всех камер
-        ids = list()
-        for i in range(100):
-            try:
-                cap = cv2.VideoCapture(i)
-                ret, src = cap.read()
-                if ret:
-                    ids.append(i)
-                    cap.release()
-            except:
-                pass
+        # ids = list()
+        # for i in range(100):
+        #     try:
+        #         cap = cv2.VideoCapture(i)
+        #         ret, src = cap.read()
+        #         if ret:
+        #             ids.append(i)
+        #             cap.release()
+        #     except:
+        #         pass
         
-        if(len(ids) < 4):
-            logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
-            self.signal_critical_error.emit(9750)
+        # if(len(ids) < 4):
+        #     logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
+        #     self.signal_critical_error.emit(9750)
 
-            self.cam_index_0 = ids[0]
-            # exit(1)
+        #     self.cam_index_0 = ids[0]
+        #     # exit(1)
 
-        else:
-            self.cam_index_0 = ids[0] 
-            self.cam_index_1 = ids[1]
-            self.cam_index_2 = ids[2]
-            self.cam_index_3 = ids[3]
+        # else:
+        #     self.cam_index_0 = ids[0] 
+        #     self.cam_index_1 = ids[1]
+        #     self.cam_index_2 = ids[2]
+        #     self.cam_index_3 = ids[3]
 
+        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.0.65:554/h264Preview_01_main'
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
