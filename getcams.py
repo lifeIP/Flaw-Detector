@@ -20,7 +20,7 @@
 import cv2
 import os
 
-RTSP_URL = 'rtsp://admin:gfhjkm1$@192.168.0.68:554/h264Preview_01_main'
+RTSP_URL = 'rtsp://admin:gfhjkm1$@192.168.1.67:554/h264Preview_01_main'
 
 os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;udp'
 

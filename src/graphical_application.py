@@ -180,6 +180,13 @@ class App(QWidget):
         self.slot_change_status(1 if self.is_line_start else 0)
 
 
+    @pyqtSlot(bool)
+    def slot_start_or_stop_line(self, state):
+        self.is_line_start = state
+        self.signal_start_or_stop.emit(self.is_line_start)
+        self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
+        self.slot_change_status(1 if self.is_line_start else 0)
+
     @pyqtSlot(int)
     def slot_change_status(self, status):
         self.status = status
@@ -566,6 +573,7 @@ class App(QWidget):
 
         self.signal_start_stop_line.connect(self.manage_serial.slot_start_stop)
         self.manage_serial.signal_critical_error.connect(self.slot_send_critical_error)
+        self.manage_serial.signal_start_stop.connect(self.slot_start_or_stop_line)
 
 
         self.manage_serial.moveToThread(self.serial_thread)

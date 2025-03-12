@@ -10,9 +10,12 @@ from src.logger import logger
 class SenderThread(QThread):
     signal_critical_error = pyqtSignal(int)
 
+    signal_start_stop = pyqtSignal(bool)
     pyqtSlot(bool)
     def slot_start_stop(self, flag:bool):
-        self.line_is_start = "green" if flag else "red"
+        self.line_is_start = " green" if flag else " red"
+
+
 
     def __init__(self):
         super().__init__()
@@ -44,7 +47,7 @@ class SenderThread(QThread):
             self.signal_critical_error.emit(9851)
             
 
-        self.line_is_start = "red"
+        self.line_is_start = " red"
         self.start()
 
 
@@ -54,6 +57,13 @@ class SenderThread(QThread):
                 self.serial_port.writelines([self.line_is_start.encode()])
                 line = self.serial_port.readline()
                 
+                if "SIGNAL START" in line:
+                    self.signal_start_stop.emit(True)
+
+                if "SIGNAL STOP" in line:
+                    self.signal_start_stop.emit(False)
+                
+
                 if "ONLINE" not in line:
                     logger.warning(f"Критическая ошибка: Не было получено корректного ответа от платы управления")
                     self.signal_critical_error.emit(9852)
