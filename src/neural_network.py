@@ -23,35 +23,11 @@ class ManagePThread(QThread):
     def __init__(self):
         super().__init__()
         
-        # получаем список всех камер
-        # ids = list()
-        # for i in range(100):
-        #     try:
-        #         cap = cv2.VideoCapture(i)
-        #         ret, src = cap.read()
-        #         if ret:
-        #             ids.append(i)
-        #             cap.release()
-        #     except:
-        #         pass
-        
-        # if(len(ids) < 4):
-        #     logger.warning(f"Критическая ошибка: было найдено только {len(ids)} камер! {ids}")
-        #     self.signal_critical_error.emit(9750)
 
-        #     self.cam_index_0 = ids[0]
-        #     # exit(1)
-
-        # else:
-        #     self.cam_index_0 = ids[0] 
-        #     self.cam_index_1 = ids[1]
-        #     self.cam_index_2 = ids[2]
-        #     self.cam_index_3 = ids[3]
-
-        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.1.65:554/h264Preview_01_main'
-        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.1.66:554/h264Preview_01_main'
+        # self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.1.65:554/h264Preview_01_main'
+        # self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.1.66:554/h264Preview_01_main'
         self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.1.67:554/h264Preview_01_main'
-        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.1.68:554/h264Preview_01_main'
+        # self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.1.68:554/h264Preview_01_main'
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
@@ -78,10 +54,10 @@ class ManagePThread(QThread):
             self.confidence_threshold_3[0] = int(lines[3].rstrip())
 
 
-        self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        # self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
+        # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
         self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        # self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
 
@@ -109,10 +85,10 @@ class ManagePThread(QThread):
         self.mlock.release()
         logger.warning(f"Попытка закрытия программы")
         
-        self.thread_4.terminate()
-        self.thread_5.terminate()
+        # self.thread_4.terminate()
+        # self.thread_5.terminate()
         self.thread_6.terminate()
-        self.thread_7.terminate()
+        # self.thread_7.terminate()
         self.terminate()
 
     
@@ -202,13 +178,13 @@ class ManagePThread(QThread):
 
     def run(self):
        
-        self.thread_4.start()
-        self.thread_5.start()
+        # self.thread_4.start()
+        # self.thread_5.start()
         self.thread_6.start()
-        self.thread_7.start()
+        # self.thread_7.start()
 
 
-        self.thread_4.join()
-        self.thread_5.join()
+        # self.thread_4.join()
+        # self.thread_5.join()
         self.thread_6.join()
-        self.thread_7.join()
+        # self.thread_7.join()

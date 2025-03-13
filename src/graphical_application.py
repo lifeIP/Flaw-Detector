@@ -182,10 +182,15 @@ class App(QWidget):
 
     @pyqtSlot(bool)
     def slot_start_or_stop_line(self, state):
-        self.is_line_start = state
+        if self.status == 2:
+            self.is_line_start = False
+
+        else:
+            self.is_line_start = state
         self.signal_start_or_stop.emit(self.is_line_start)
         self.signal_start_stop_line.emit(1 if self.is_line_start else 0)
         self.slot_change_status(1 if self.is_line_start else 0)
+
 
     @pyqtSlot(int)
     def slot_change_status(self, status):

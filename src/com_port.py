@@ -22,6 +22,7 @@ class SenderThread(QThread):
         
         is_found = False
         self.port = ""
+        self.line_status = " status "
 
         for i in range(64) :
             try :
@@ -52,22 +53,18 @@ class SenderThread(QThread):
 
 
     def run(self):
+
         while True:
             try:
                 self.serial_port.writelines([self.line_is_start.encode()])
-                line = self.serial_port.readline()
-                
-                if "SIGNAL START" in line:
+                line = str(self.serial_port.readline())
+
+                if "START" in line: 
                     self.signal_start_stop.emit(True)
 
-                if "SIGNAL STOP" in line:
+                if "STOP" in line:
                     self.signal_start_stop.emit(False)
                 
-
-                if "ONLINE" not in line:
-                    logger.warning(f"Критическая ошибка: Не было получено корректного ответа от платы управления")
-                    self.signal_critical_error.emit(9852)
-                    return
 
             except:
                 is_found = False
@@ -102,6 +99,4 @@ class SenderThread(QThread):
                         logger.warning(f"Не получилось получить доступ к COM-порту: {self.port}, id: 2")
                         self.signal_critical_error.emit(9855)
                         return
-                # time.sleep(15)
-
                 
