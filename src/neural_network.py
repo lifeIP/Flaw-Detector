@@ -24,10 +24,10 @@ class ManagePThread(QThread):
         super().__init__()
         
 
-        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.1.65:554/h264Preview_01_main'
-        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.1.66:554/h264Preview_01_main'
-        self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.1.67:554/h264Preview_01_main'
-        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.1.68:554/h264Preview_01_main'
+        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.10.65:554/h264Preview_01_main'
+        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.10.66:554/h264Preview_01_main'
+        self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.10.67:554/h264Preview_01_main'
+        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.10.68:554/h264Preview_01_main'
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
