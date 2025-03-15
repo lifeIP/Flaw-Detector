@@ -24,10 +24,10 @@ class ManagePThread(QThread):
         super().__init__()
         
 
-        # self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.1.65:554/h264Preview_01_main'
-        # self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.1.66:554/h264Preview_01_main'
+        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.1.65:554/h264Preview_01_main'
+        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.1.66:554/h264Preview_01_main'
         self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.1.67:554/h264Preview_01_main'
-        # self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.1.68:554/h264Preview_01_main'
+        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.1.68:554/h264Preview_01_main'
         
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
@@ -54,10 +54,10 @@ class ManagePThread(QThread):
             self.confidence_threshold_3[0] = int(lines[3].rstrip())
 
 
-        # self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        # self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
+        self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
+        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
         self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        # self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
+        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
 
 
 
@@ -85,10 +85,10 @@ class ManagePThread(QThread):
         self.mlock.release()
         logger.warning(f"Попытка закрытия программы")
         
-        # self.thread_4.terminate()
-        # self.thread_5.terminate()
+        self.thread_4.terminate()
+        self.thread_5.terminate()
         self.thread_6.terminate()
-        # self.thread_7.terminate()
+        self.thread_7.terminate()
         self.terminate()
 
     
@@ -134,6 +134,7 @@ class ManagePThread(QThread):
                 cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
                 # Этот участок кода должен быть удален для релиза
                 #------------------------------------------------
+                
 
                 directory_with_boxes = f"images/boxes/{datetime.today().strftime('%Y/%m/%d')}"
                 file_name = time.time_ns()
@@ -178,13 +179,13 @@ class ManagePThread(QThread):
 
     def run(self):
        
-        # self.thread_4.start()
-        # self.thread_5.start()
+        self.thread_4.start()
+        self.thread_5.start()
         self.thread_6.start()
-        # self.thread_7.start()
+        self.thread_7.start()
 
 
-        # self.thread_4.join()
-        # self.thread_5.join()
+        self.thread_4.join()
+        self.thread_5.join()
         self.thread_6.join()
-        # self.thread_7.join()
+        self.thread_7.join()

@@ -59,8 +59,9 @@ class SenderThread(QThread):
                 self.serial_port.writelines([self.line_is_start.encode()])
                 line = str(self.serial_port.readline())
 
-                if "START" in line: 
-                    self.signal_start_stop.emit(True)
+                if "START" in line:
+                    pass
+                    # self.signal_start_stop.emit(True)
 
                 if "STOP" in line:
                     self.signal_start_stop.emit(False)
