@@ -20,22 +20,24 @@
 import cv2
 import os
 
-RTSP_URL = 'rtsp://admin:gfhjkm1$@192.168.10.67:554/h264Preview_01_main'
+RTSP_URL_0 = 'rtsp://admin:gfhjkm1$@192.168.10.68:554/h264Preview_01_main'
 
 os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;udp'
 
-cap = cv2.VideoCapture(RTSP_URL, cv2.CAP_FFMPEG)
+cap_0 = cv2.VideoCapture(RTSP_URL_0, cv2.CAP_FFMPEG)
 
-if not cap.isOpened():
-    print('Cannot open RTSP stream')
-    exit(-1)
+def show_img(cap, name):
+    _, frame = cap.read()
+    frame = cv2.resize(frame, (640, 480))
+    cv2.imshow(name, frame)
+
 
 while True:
-    _, frame = cap.read()
-    cv2.imshow('RTSP stream', frame)
+
+    show_img(cap_0, "0")
 
     if cv2.waitKey(1) == 27:
         break
 
-cap.release()
+cap_0.release()
 cv2.destroyAllWindows()

@@ -1,6 +1,8 @@
 .venv/
 *.png
 __pycache__/
+dataset/
+runs/
 output/
 *.py[cod]
 *.log
