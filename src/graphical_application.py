@@ -11,7 +11,7 @@ class AboutProgram(QWidget):
     def __init__(self):
         super().__init__()
 
-        with open('aboutme.json', 'r') as file:
+        with open('aboutme.json', 'r', encoding="utf-8") as file:
             self.data = json.load(file)
         
         self.qr_tg = QPixmap()
@@ -20,13 +20,13 @@ class AboutProgram(QWidget):
         
         self.qr_tg.load("tg_qr.png")
         
-
+        print(self.data.get("name"))
         self.initUI()
         self.qr_label.setPixmap(self.qr_tg)
 
     def initUI(self):
         
-        self.name_label = QLabel(f'<b style="color: green;">{self.data.get("name")}</b>')
+        self.name_label = QLabel(f'<b style="color: green;">{str(self.data.get("name"))}</b>')
         self.name_label.setFont(QFont(None, 25))
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         

@@ -16,23 +16,88 @@ from src.logger import logger
 MODEL_PATH = "yolo11s.pt"
 
 
+def yolo_data_processing(cam_index, confidence_threshold, start_or_stop, counts_of_flaws, mlock):
+    """
+    Функция для обработки данных YOLO модели.
+    :param cam_index: Индекс камеры или путь к видеопотоку
+    :param confidence_threshold: Порог уверенности обнаружения дефекта
+    :param start_or_stop: Флаг начала/остановки процесса обработки
+    :param counts_of_flaws: Список для подсчета дефектов
+    :param mlock: Мьютекс для синхронизации доступа к общим ресурсам
+    """
+    model = YOLO(MODEL_PATH)
+    try:
+        model.to('cuda')
+    except:
+        logger.warning(f"Нет возможности отправить вычисления на видеокарту для камеры с индексом {cam_index}. Вычисления происходят на процессоре")
+
+    while True:
+        detections = model(cam_index, stream=True)
+        for obj in detections:
+            opencv_array: cv2.Mat = obj.orig_img
+
+            # Область сохранения изображений (для тестирования)
+            directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
+            if not os.path.exists(directory_empty):
+                os.makedirs(directory_empty)
+            cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
+
+            directory_with_boxes = f"images/boxes/{datetime.today().strftime('%Y/%m/%d')}"
+            file_name = time.time_ns()
+
+            for data in obj.boxes.data.tolist():
+                confidence = data[4]
+
+                mlock.acquire()
+                ct_conf = float(confidence_threshold[0]) / 10000
+                mlock.release()
+
+                if float(confidence) < ct_conf or not start_or_stop[0]:
+                    continue
+
+                mlock.acquire()
+                counts_of_flaws[0] += 1
+                file_with_flaw = f"{directory_with_boxes}/{file_name}.png"
+                with open("last_flaw", "w") as f:
+                    f.writelines([
+                        file_with_flaw + "\n",
+                        str(float(confidence)) + "\n",
+                        str(float(confidence_threshold[0]) / 10000) + "\n"
+                    ])
+
+                with open("list_of_flaw", "a") as f:
+                    f.write(
+                        f"{datetime.today().strftime('%Y.%m.%d.%H:%M:%S')} "
+                        f"{file_with_flaw} {str(float(confidence))} "
+                        f"{str(float(confidence_threshold[0]) / 10000)}\n"
+                    )
+
+                logger.warning(f"Обнаружен дефект: {float(confidence)}:"
+                               f"{float(confidence_threshold[0]) / 10000} *** "
+                               f"{directory_with_boxes}/{file_name}.png")
+                start_or_stop[0] = False
+                mlock.release()
+
+                if not os.path.exists(directory_with_boxes):
+                    os.makedirs(directory_with_boxes)
+
+                xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
+                cv2.rectangle(opencv_array, (xmin, ymin), (xmax, ymax), (0, 0, 255), 3)
+                cv2.imwrite(f"{directory_with_boxes}/{file_name}.png", opencv_array)
+
+
 class ManagePThread(QThread):
     
     signal_critical_error = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
-        
+        self.cam_index_0 = 0
+        # Другие индексы камер закомментированы...
 
-        self.cam_index_0 = 'rtsp://admin:gfhjkm1$@192.168.10.65:554/h264Preview_01_main'
-        self.cam_index_1 = 'rtsp://admin:gfhjkm1$@192.168.10.66:554/h264Preview_01_main'
-        self.cam_index_2 = 'rtsp://admin:gfhjkm1$@192.168.10.67:554/h264Preview_01_main'
-        self.cam_index_3 = 'rtsp://admin:gfhjkm1$@192.168.10.68:554/h264Preview_01_main'
-        
         self.manager = mp.Manager()
         self.mlock = mp.Lock()
 
-        
         self.start_or_stop = self.manager.list([False, False])
 
         self.counts_of_flaws_0 = self.manager.list([0])
@@ -47,21 +112,24 @@ class ManagePThread(QThread):
 
         with open("./settings.st", "r") as file:
             lines = file.readlines()
-
             self.confidence_threshold_0[0] = int(lines[0].rstrip())
             self.confidence_threshold_1[0] = int(lines[1].rstrip())
             self.confidence_threshold_2[0] = int(lines[2].rstrip())
             self.confidence_threshold_3[0] = int(lines[3].rstrip())
 
-
-        self.thread_4 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_0, self.confidence_threshold_0, self.start_or_stop, self.counts_of_flaws_0, self.mlock))
-        self.thread_5 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_1, self.confidence_threshold_1, self.start_or_stop, self.counts_of_flaws_1, self.mlock))
-        self.thread_6 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_2, self.confidence_threshold_2, self.start_or_stop, self.counts_of_flaws_2, self.mlock))
-        self.thread_7 = mp.Process(target=self.yolo_data_processing, args=(self.cam_index_3, self.confidence_threshold_3, self.start_or_stop, self.counts_of_flaws_3, self.mlock))
-
-
+        # Передаем обработчик данных отдельно от класса
+        self.thread_4 = mp.Process(target=yolo_data_processing, args=(
+            self.cam_index_0,
+            self.confidence_threshold_0,
+            self.start_or_stop,
+            self.counts_of_flaws_0,
+            self.mlock
+        ))
+        # Остальные потоки аналогично закомментированы...
 
         self.start()
+
+
 
     pyqtSlot(int, int)
     def slot_change_confidence_threshold(self, confidence_threshold: int, ct_id: int):
@@ -86,9 +154,9 @@ class ManagePThread(QThread):
         logger.warning(f"Попытка закрытия программы")
         
         self.thread_4.terminate()
-        self.thread_5.terminate()
-        self.thread_6.terminate()
-        self.thread_7.terminate()
+        # self.thread_5.terminate()
+        # self.thread_6.terminate()
+        # self.thread_7.terminate()
         self.terminate()
 
     
@@ -109,83 +177,18 @@ class ManagePThread(QThread):
 
 
 
-    def yolo_data_processing(self, cam_index, confidence_threshold, start_or_stop, counts_of_flaws, mlock):
-        model = YOLO(MODEL_PATH)
-        try:
-            model.to('cuda')
-        except:
-            logger.warning(f"Нет возможности отправить вычисления на видеокарту для камеры с индексом {cam_index}. Вычисления происходят на процессоре")
-
-        while(True):
-
-            detections = model(cam_index, stream=True)
-            
-            for obj in detections:
-                opencv_array:cv2.Mat = obj.orig_img
-                
-                
-                #++++++++++++++++++++++++++++++++++++++++++++++++
-                # Этот участок кода должен быть удален для релиза
-                directory_empty = f"images/empty/{datetime.today().strftime('%Y/%m/%d')}"
-                
-                if not os.path.exists(directory_empty):
-                    os.makedirs(directory_empty)
-                
-                cv2.imwrite(f"{directory_empty}/{time.time_ns()}.png", opencv_array)
-                # Этот участок кода должен быть удален для релиза
-                #------------------------------------------------
-                
-
-                directory_with_boxes = f"images/boxes/{datetime.today().strftime('%Y/%m/%d')}"
-                file_name = time.time_ns()
-                
-                for data in obj.boxes.data.tolist():
-                    confidence = data[4]
-
-                    mlock.acquire()
-                    ct_conf = float(confidence_threshold[0])/10000
-                    mlock.release()
-                    
-                    if float(confidence) < ct_conf:
-                        continue
-
-                    if not start_or_stop[0]:
-                        continue
-        
-                    mlock.acquire()
-                    counts_of_flaws[0] += 1
-                    
-                    file_with_flaw = f"{directory_with_boxes}/{file_name}.png"
-                    with open("last_flaw", "w") as f:
-                        f.writelines([file_with_flaw + "\n", str(float(confidence)) + "\n", str(float(confidence_threshold[0])/10000)+"\n"])
-
-                    with open("list_of_flaw", "a") as f:
-                        f.write(f"{datetime.today().strftime('%Y.%m.%d.%H:%M:%S')} {file_with_flaw} {str(float(confidence))} {str(float(confidence_threshold[0])/10000)}\n")
-
-
-                    logger.warning(f"Обнаружен дефект: {float(confidence)}:{float(confidence_threshold[0])/10000} *** {directory_with_boxes}/{file_name}.png")
-                    start_or_stop[0] = False
-                    mlock.release()
-              
-                    if not os.path.exists(directory_with_boxes):
-                        os.makedirs(directory_with_boxes)
-
-                    xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
-                    cv2.rectangle(opencv_array, (xmin, ymin) , (xmax, ymax), (0, 0, 255), 3)
-                    
-                    cv2.imwrite(f"{directory_with_boxes}/{file_name}.png", opencv_array)
-            
+          
 
 
     def run(self):
        
         self.thread_4.start()
-        self.thread_5.start()
-        self.thread_6.start()
-        self.thread_7.start()
+        # self.thread_5.start()
+        # self.thread_6.start()
+        # self.thread_7.start()
 
 
         self.thread_4.join()
-        self.thread_5.join()
-        self.thread_6.join()
-        self.thread_7.join()
+        # self.thread_5.join()
+        # self.thread_6.join()
+        # self.thread_7.join()
