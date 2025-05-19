@@ -2,7 +2,12 @@ from PyQt6.QtWidgets    import *
 from PyQt6.QtCore       import *
 
 import os
+
 import cv2
+import numpy as np
+import mvsdk
+import platform
+
 import time
 from datetime import datetime
 import torch.multiprocessing as mp
@@ -25,6 +30,29 @@ def yolo_data_processing(cam_index, confidence_threshold, start_or_stop, counts_
     :param counts_of_flaws: Список для подсчета дефектов
     :param mlock: Мьютекс для синхронизации доступа к общим ресурсам
     """
+    hCamera = 0
+    try:
+        hCamera = mvsdk.CameraInit(cam_index, -1, -1)
+    except mvsdk.CameraException as e:
+        print("CameraInit Failed({}): {}".format(e.error_code, e.message) )
+        return
+
+    cap = mvsdk.CameraGetCapability(hCamera)
+    monoCamera = (cap.sIspCapacity.bMonoSensor != 0)
+    if monoCamera:
+        mvsdk.CameraSetIspOutFormat(hCamera, mvsdk.CAMERA_MEDIA_TYPE_MONO8)
+    else:
+        mvsdk.CameraSetIspOutFormat(hCamera, mvsdk.CAMERA_MEDIA_TYPE_BGR8)
+    
+    mvsdk.CameraSetTriggerMode(hCamera, 0)
+    mvsdk.CameraSetAeState(hCamera, 0)
+    mvsdk.CameraSetExposureTime(hCamera, 30 * 1000)
+    mvsdk.CameraPlay(hCamera)
+    FrameBufferSize = cap.sResolutionRange.iWidthMax * cap.sResolutionRange.iHeightMax * (1 if monoCamera else 3)
+    pFrameBuffer = mvsdk.CameraAlignMalloc(FrameBufferSize, 16)
+
+
+    
     model = YOLO(MODEL_PATH)
     try:
         model.to('cuda')
@@ -32,7 +60,20 @@ def yolo_data_processing(cam_index, confidence_threshold, start_or_stop, counts_
         logger.warning(f"Нет возможности отправить вычисления на видеокарту для камеры с индексом {cam_index}. Вычисления происходят на процессоре")
 
     while True:
-        detections = model(cam_index, stream=True)
+        try:
+            pRawData, FrameHead = mvsdk.CameraGetImageBuffer(hCamera, 200)
+            mvsdk.CameraImageProcess(hCamera, pRawData, pFrameBuffer, FrameHead)
+            mvsdk.CameraReleaseImageBuffer(hCamera, pRawData)
+            mvsdk.CameraFlipFrameBuffer(pFrameBuffer, FrameHead, 1)
+            frame_data = (mvsdk.c_ubyte * FrameHead.uBytes).from_address(pFrameBuffer)
+            frame = np.frombuffer(frame_data, dtype=np.uint8)
+            frame = frame.reshape((FrameHead.iHeight, FrameHead.iWidth, 1 if FrameHead.uiMediaType == mvsdk.CAMERA_MEDIA_TYPE_MONO8 else 3) )
+            frame = cv2.resize(frame, (640,480), interpolation = cv2.INTER_LINEAR)
+        except mvsdk.CameraException as e:
+            if e.error_code != mvsdk.CAMERA_STATUS_TIME_OUT:
+                print("CameraGetImageBuffer failed({}): {}".format(e.error_code, e.message) )
+
+        detections = model(frame)
         for obj in detections:
             opencv_array: cv2.Mat = obj.orig_img
 
@@ -92,7 +133,14 @@ class ManagePThread(QThread):
 
     def __init__(self):
         super().__init__()
-        self.cam_index_0 = 0
+
+        DevList = mvsdk.CameraEnumerateDevice()
+        nDev = len(DevList)
+        if nDev < 1:
+            print("No camera was found!")
+            return
+
+        self.cam_index_0 = DevList[0]
         # Другие индексы камер закомментированы...
 
         self.manager = mp.Manager()
